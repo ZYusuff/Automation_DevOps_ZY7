@@ -14,7 +14,7 @@ def _get_ads(url_for_search, params):
  
  
 @dlt.resource(table_name= 'raw_jobs', write_disposition="append")
-def jobsearch_resource(params):
+def jobsearch_resource(param):
     """
     params should include at least:
       - "q": your query
