@@ -1,65 +1,55 @@
-# This is a basic workflow to help you get started with Actions
-
 name: ZY7
 
-# Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
     env:
       IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/jobads-dashboard-zy
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out koden i repot under $GITHUB_WORKSPACE så att jobs kan hämta den
-      - name: Checkout reposatory
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Installerar och konfigurerar Python 3.11 i workflow-miljön.
+      # Installerar och konfigurerar Python 3.11 i workflow-miljön
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          
+
       # Installera python dependencies i GitHub Actions-miljön.
-      # Utan detta skulle workflow:et sakna nödvändiga paket och testerna misslyckas.
-      # Ser till att tester och skript fungerar i en ren CI/CD-miljö
+      # Ser till att tester och skript fungerar
       - name: Install dependencies
-        run: | 
+        run: |
           pip install --upgrade pip
           pip install -r requirements.txt
           pip install pytest
-          
-      # Run unit and intergration tests
-      # Ser till att koden fungerar som förväntat innan docker-imagen byggs och pushas.
-      - name: run tests
+
+      # Run unit and integration tests
+      # Ser till att koden som hämtar API fungerar innan docker-imagen byggs och pushas.
+      - name: Run tests
         run: pytest --maxfail=1 --disable-warnings
-          
+
+      # Logga in på Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+      # Build och push docker-image till docker hub
       - name: Build and push Docker images
-  # You may pin to the exact commit or the version.
-  # uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83
         uses: docker/build-push-action@v6.18.0
         with:
-          context: . #docker file finns i roten
-          file: Dockerfile
-          push: true # pushar automatiskt till docker hub
-          tags: zamzamy/jobads-dashboard-zy:latest #namn på filen +tag
-          dockerhub-username: ${{ secrets.DOCKERHUB_USERNAME }}
-          dockerhub-password: ${{ secrets.DOCKERHUB_PASSWORD }}
-
-
-      
+          context: .          # Dockerfile finns i roten
+          file: Dockerfile    # Dockerfile-namn
+          push: true          # pushar automatiskt till Docker Hub
+          tags: zamzamy/jobads-dashboard-zy:latest # namnet på imagen + tag
